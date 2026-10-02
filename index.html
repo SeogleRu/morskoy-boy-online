@@ -2,209 +2,209 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Морской бой Онлайн</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Arial', sans-serif;
+        * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; }
+        html, body {
+            margin: 0; padding: 0; overflow: hidden;
+            width: 100%; height: 100%; position: fixed;
+            font-family: -apple-system, BlinkMacSystemFont, 'Arial', sans-serif;
+            background: #000; touch-action: none;
         }
+        canvas { display: block; touch-action: none; }
         #ui-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            color: white;
-            text-shadow: 1px 1px 3px black;
-            z-index: 10;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; pointer-events: none;
+            color: white; text-shadow: 1px 1px 3px black; z-index: 10;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
         .menu-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 20, 40, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            pointer-events: auto;
-            backdrop-filter: blur(5px);
-            transition: opacity 0.5s;
-            z-index: 20;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #001428 0%, #002a4a 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            pointer-events: auto; transition: opacity 0.4s;
+            z-index: 20; padding: 20px; overflow-y: auto;
         }
-        .menu-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-            display: none;
-        }
+        .menu-screen.hidden { opacity: 0; pointer-events: none; display: none; }
         .auth-box, .map-select {
             background: rgba(10, 30, 50, 0.95);
-            padding: 30px 40px;
-            border-radius: 15px;
+            padding: 25px 20px; border-radius: 15px;
             border: 2px solid #4a8bb9;
             box-shadow: 0 0 30px rgba(74, 139, 185, 0.5);
-            text-align: center;
-            min-width: 300px;
+            text-align: center; width: 100%; max-width: 380px;
         }
-        h1, h2 {
-            color: #aad4ff;
-            margin-top: 0;
-            letter-spacing: 2px;
-        }
+        h1, h2 { color: #aad4ff; margin: 0 0 10px; letter-spacing: 2px; }
+        h1 { font-size: 20px; }
+        p { margin: 8px 0; }
         input {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #2a5a7a;
-            background: #1a2f3f;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
+            display: block; width: 100%; padding: 14px;
+            margin: 10px 0; border-radius: 8px;
+            border: 1px solid #2a5a7a; background: #1a2f3f;
+            color: white; font-size: 16px; -webkit-appearance: none;
         }
         button {
-            background: #1e5a8a;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 10px 5px;
-            transition: 0.2s;
+            background: #1e5a8a; color: white; border: none;
+            padding: 14px 22px; border-radius: 30px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            margin: 8px 4px; transition: 0.2s;
             border-bottom: 4px solid #0e3a5a;
-            letter-spacing: 1px;
-            pointer-events: auto;
+            letter-spacing: 1px; pointer-events: auto;
+            -webkit-appearance: none; touch-action: manipulation;
+            min-width: 120px;
         }
-        button:hover {
-            background: #2e7ab0;
-            transform: scale(1.02);
-        }
+        button:active { background: #2e7ab0; transform: scale(0.97); }
+        button:disabled { background: #444; border-bottom-color: #222; opacity: 0.5; }
         .map-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 20px 0;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; margin: 15px 0;
         }
         .map-card {
-            background: #1a3f5a;
-            border-radius: 12px;
-            padding: 15px;
-            cursor: pointer;
+            background: #1a3f5a; border-radius: 10px;
+            padding: 12px 8px; cursor: pointer;
             border: 2px solid #2e6a92;
-            transition: 0.2s;
-            pointer-events: auto;
+            transition: 0.2s; pointer-events: auto;
+            touch-action: manipulation;
         }
-        .map-card:hover {
-            background: #2a5f7a;
-            border-color: #7ab8e0;
-            transform: scale(1.05);
-        }
+        .map-card:active { background: #2a5f7a; transform: scale(0.97); }
         .map-card.selected {
-            border-color: #ffd966;
-            background: #2a5f7a;
-            box-shadow: 0 0 20px #ffd966;
+            border-color: #ffd966; background: #2a5f7a;
+            box-shadow: 0 0 15px #ffd966;
         }
-        .map-card h3 {
-            margin: 0 0 5px;
-            color: #fff;
-        }
-        .map-card p {
-            margin: 0;
-            font-size: 12px;
-            color: #b0d4f0;
-        }
+        .map-card h3 { margin: 0 0 4px; color: #fff; font-size: 13px; }
+        .map-card p { margin: 0; font-size: 10px; color: #b0d4f0; }
+
+        /* HUD */
         .hud {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
+            display: flex; justify-content: space-between;
+            padding: 10px; padding-top: calc(10px + env(safe-area-inset-top));
+            gap: 8px;
         }
         .hud-left, .hud-right {
-            background: rgba(0, 20, 40, 0.7);
-            padding: 15px 25px;
-            border-radius: 40px;
+            background: rgba(0, 20, 40, 0.75);
+            padding: 8px 14px; border-radius: 30px;
             border: 1px solid #3a7a9a;
             backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            font-size: 12px; flex: 1; max-width: 45%;
         }
         .health-bar {
-            width: 200px;
-            height: 12px;
-            background: #2a1a1a;
-            border-radius: 6px;
-            overflow: hidden;
-            margin-top: 5px;
+            width: 100%; height: 10px; background: #2a1a1a;
+            border-radius: 5px; overflow: hidden; margin-top: 4px;
         }
         .health-fill {
-            height: 100%;
-            background: #3aff3a;
-            width: 100%;
-            transition: width 0.3s;
+            height: 100%; background: #3aff3a;
+            width: 100%; transition: width 0.3s;
         }
-        .enemy-health {
-            background: #ff3a3a;
+        .score { color: #ffd966; font-weight: bold; }
+
+        /* Мобильные контролы */
+        #mobileControls {
+            position: absolute; bottom: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 15; display: none;
         }
+        #mobileControls.active { display: block; }
+        .joystick-zone {
+            position: absolute;
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            left: 20px; width: 130px; height: 130px;
+            border-radius: 50%;
+            background: rgba(30, 90, 140, 0.25);
+            border: 2px solid rgba(120, 180, 220, 0.5);
+            pointer-events: auto; touch-action: none;
+        }
+        .joystick-knob {
+            position: absolute; top: 50%; left: 50%;
+            width: 55px; height: 55px;
+            margin-top: -27.5px; margin-left: -27.5px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #6ab0e0, #1e5a8a);
+            border: 2px solid #aad4ff;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(100, 180, 255, 0.6);
+        }
+        .fire-button {
+            position: absolute;
+            bottom: calc(30px + env(safe-area-inset-bottom));
+            right: 25px; width: 95px; height: 95px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff6633, #992200);
+            border: 3px solid #ffcc88;
+            color: white; font-weight: bold; font-size: 13px;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: auto; touch-action: manipulation;
+            box-shadow: 0 0 25px rgba(255, 100, 50, 0.7);
+            text-shadow: 1px 1px 2px black; letter-spacing: 1px;
+        }
+        .fire-button:active { transform: scale(0.93); }
         .controls-hint {
-            text-align: center;
-            padding: 10px;
-            font-size: 14px;
-            color: #b0d4f0;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 20px;
-            margin-bottom: 20px;
-            align-self: center;
+            position: absolute;
+            bottom: calc(10px + env(safe-area-inset-bottom));
+            left: 50%; transform: translateX(-50%);
+            padding: 6px 14px; font-size: 11px; color: #b0d4f0;
+            background: rgba(0, 0, 0, 0.55); border-radius: 20px;
+            white-space: nowrap; pointer-events: none;
         }
-        .info-panel {
-            display: flex;
-            gap: 30px;
+        @media (min-width: 768px) {
+            h1 { font-size: 26px; }
+            .auth-box, .map-select { padding: 35px 40px; max-width: 450px; }
+            .map-card h3 { font-size: 15px; }
+            .map-card p { font-size: 12px; }
+            .hud-left, .hud-right { font-size: 14px; padding: 10px 18px; }
+            #mobileControls { display: none !important; }
         }
-        .score {
-            color: #ffd966;
-            font-weight: bold;
+        @media (max-height: 500px) and (orientation: landscape) {
+            .auth-box, .map-select { padding: 15px 20px; max-height: 95vh; overflow-y: auto; }
+            h1 { font-size: 16px; }
+            .map-grid { grid-template-columns: repeat(4, 1fr); }
+            .map-card h3 { font-size: 11px; }
+            .map-card p { display: none; }
+            button { padding: 10px 16px; font-size: 14px; }
+            input { padding: 10px; font-size: 14px; }
+        }
+        @media (hover: none) and (pointer: coarse) {
+            .desktop-hint { display: none; }
         }
     </style>
 </head>
 <body>
-    <div id="ui-container">
-        <!-- HUD будет здесь -->
+    <div id="ui-container"></div>
+
+    <!-- Мобильные контролы -->
+    <div id="mobileControls">
+        <div class="joystick-zone" id="joystickZone">
+            <div class="joystick-knob" id="joystickKnob"></div>
+        </div>
+        <div class="fire-button" id="fireButton">ОГОНЬ</div>
+        <div class="controls-hint desktop-hint" id="mobileHint">Джойстик — движение | ОГОНЬ — выстрел</div>
     </div>
 
-    <!-- Экран входа/регистрации -->
     <div id="authScreen" class="menu-screen">
         <div class="auth-box">
             <h1>⚓ Морской бой Онлайн ⚓</h1>
-            <p style="color:#b0d4f0;">Морской бой</p>
-            <input type="text" id="username" placeholder="Имя капитана" value="Адмирал">
+            <p style="color:#b0d4f0; font-size:13px;">Морской бой в браузере</p>
+            <input type="text" id="username" placeholder="Имя капитана" value="Адмирал" autocomplete="off">
             <input type="password" id="password" placeholder="Пароль" value="12345">
             <div>
                 <button id="loginBtn">Войти</button>
                 <button id="registerBtn">Регистрация</button>
             </div>
-            <p style="font-size:12px; margin-top:20px; color:#7a9ab0;">* для прототипа: любой логин/пароль</p>
+            <p style="font-size:11px; margin-top:15px; color:#7a9ab0;">* любой логин/пароль</p>
         </div>
     </div>
 
-    <!-- Экран выбора карты -->
     <div id="mapScreen" class="menu-screen hidden">
         <div class="map-select">
-            <h2>Выбор карты</h2>
-            <div class="map-grid" id="mapGrid">
-                <!-- карты добавятся через JS -->
-            </div>
+            <h2>ВЫБОР КАРТЫ</h2>
+            <div class="map-grid" id="mapGrid"></div>
             <button id="startBattleBtn" disabled>В БОЙ!</button>
         </div>
     </div>
 
-    <!-- Загрузка Three.js -->
     <script type="importmap">
         {
             "imports": {
@@ -216,48 +216,63 @@
 
     <script type="module">
         import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-        // ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------
+        // ---------- DETECT DEVICE ----------
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                        || ('ontouchstart' in window && window.innerWidth < 1024);
+        const isLowPower = isMobile || window.innerWidth < 768;
+
+        // ---------- GLOBAL ----------
         let scene, camera, renderer, labelRenderer;
-        let playerShip, allies = [], enemies = [];
-        let ocean, sky, sunLight;
-        let clock = new THREE.Clock();
-        
-        // Состояние игры
+        let playerShip, allies = [], enemies = [], bullets = [];
+        let ocean, sky;
+        const clock = new THREE.Clock();
+
         let gameActive = false;
         let playerHealth = 100;
         let score = 0;
-        
-        // Управление
+        let worldInitialized = false;
+
         const keys = { w: false, a: false, s: false, d: false, space: false };
-        
-        // Текущая карта
         let currentMap = 'north';
-        
-        // Для HUD
-        let hudElement;
 
-        // ---------- ИНИЦИАЛИЗАЦИЯ СЦЕНЫ ----------
-        function initScene() {
+        const joystick = { active: false, x: 0, y: 0, touchId: null, fire: false };
+        let fireCooldown = 0;
+
+        const _v1 = new THREE.Vector3();
+        const _v2 = new THREE.Vector3();
+        const _v3 = new THREE.Vector3();
+
+        // ---------- INIT WORLD (только один раз!) ----------
+        function initWorld() {
+            if (worldInitialized) return;
+            worldInitialized = true;
+
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // небо
-            scene.fog = new THREE.Fog(0x87CEEB, 100, 600);
+            scene.background = new THREE.Color(0x87CEEB);
+            if (!isLowPower) scene.fog = new THREE.Fog(0x87CEEB, 200, 800);
 
-            // Камера
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera = new THREE.PerspectiveCamera(
+                isMobile ? 70 : 60,
+                window.innerWidth / window.innerHeight,
+                0.5,
+                isLowPower ? 1200 : 2500
+            );
             camera.position.set(0, 30, 80);
             camera.lookAt(0, 0, 0);
 
-            // Рендерер
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({
+                antialias: !isLowPower,
+                powerPreference: 'high-performance',
+                stencil: false
+            });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isLowPower ? 1.5 : 2));
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.shadowMap.enabled = !isLowPower;
+            if (renderer.shadowMap.enabled) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
 
-            // CSS2 рендерер для меток
             labelRenderer = new CSS2DRenderer();
             labelRenderer.setSize(window.innerWidth, window.innerHeight);
             labelRenderer.domElement.style.position = 'absolute';
@@ -266,553 +281,615 @@
             labelRenderer.domElement.style.pointerEvents = 'none';
             document.body.appendChild(labelRenderer.domElement);
 
-            // Освещение
-            const ambientLight = new THREE.AmbientLight(0x404060);
-            scene.add(ambientLight);
+            // Свет
+            scene.add(new THREE.AmbientLight(0x8899bb, 1.0));
+            const hemi = new THREE.HemisphereLight(0x88bbff, 0x224466, 0.6);
+            scene.add(hemi);
 
-            sunLight = new THREE.DirectionalLight(0xffeedd, 1.2);
-            sunLight.position.set(100, 200, 50);
-            sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 1024;
-            sunLight.shadow.mapSize.height = 1024;
-            const d = 300;
-            sunLight.shadow.camera.left = -d;
-            sunLight.shadow.camera.right = d;
-            sunLight.shadow.camera.top = d;
-            sunLight.shadow.camera.bottom = -d;
-            sunLight.shadow.camera.near = 1;
-            sunLight.shadow.camera.far = 600;
-            scene.add(sunLight);
+            const sun = new THREE.DirectionalLight(0xffeedd, isLowPower ? 1.0 : 1.3);
+            sun.position.set(120, 200, 80);
+            if (!isLowPower) {
+                sun.castShadow = true;
+                sun.shadow.mapSize.width = 1024;
+                sun.shadow.mapSize.height = 1024;
+                const d = 250;
+                sun.shadow.camera.left = -d;
+                sun.shadow.camera.right = d;
+                sun.shadow.camera.top = d;
+                sun.shadow.camera.bottom = -d;
+                sun.shadow.camera.near = 1;
+                sun.shadow.camera.far = 600;
+            }
+            scene.add(sun);
 
-            // Океан (большая плоскость с анимацией)
-            const oceanGeometry = new THREE.PlaneGeometry(2000, 2000, 100, 100);
-            const oceanMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a4a7a,
-                emissive: 0x102a4a,
-                roughness: 0.3,
-                metalness: 0.1,
-                transparent: true,
-                opacity: 0.95,
+            // Океан
+            const segs = isLowPower ? 24 : 60;
+            const oceanGeo = new THREE.PlaneGeometry(2000, 2000, segs, segs);
+            const oceanMat = new THREE.MeshStandardMaterial({
+                color: 0x1a5a8a,
+                emissive: 0x0a1a2a,
+                roughness: 0.35,
+                metalness: 0.2,
                 side: THREE.DoubleSide
             });
-            ocean = new THREE.Mesh(oceanGeometry, oceanMaterial);
+            ocean = new THREE.Mesh(oceanGeo, oceanMat);
             ocean.rotation.x = -Math.PI / 2;
             ocean.position.y = -1;
-            ocean.receiveShadow = true;
+            if (!isLowPower) ocean.receiveShadow = true;
             scene.add(ocean);
 
-            // Небо (купол)
-            const skyGeo = new THREE.SphereGeometry(800, 32, 15);
-            const skyMat = new THREE.MeshStandardMaterial({
-                color: 0x87CEEB,
-                emissive: 0x3366aa,
-                side: THREE.BackSide
-            });
+            // Небо
+            const skyGeo = new THREE.SphereGeometry(900, isLowPower ? 16 : 32, isLowPower ? 8 : 16);
+            const skyMat = new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide });
             sky = new THREE.Mesh(skyGeo, skyMat);
             scene.add(sky);
 
-            // Стартовый корабль игрока (создаётся после входа)
-            // Временная камера слежения
             window.addEventListener('resize', onWindowResize);
-            
-            // Запуск рендера
-            animate();
+            window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 200));
         }
 
         function onWindowResize() {
+            if (!camera || !renderer) return;
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             labelRenderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // ---------- СОЗДАНИЕ КОРАБЛЯ ----------
+        // ---------- CREATE SHIP ----------
         function createShip(color, size = 1, isPlayer = false) {
             const group = new THREE.Group();
 
-            // Корпус
-            const hullGeo = new THREE.BoxGeometry(4 * size, 1.5 * size, 10 * size);
-            const hullMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4, metalness: 0.6 });
-            const hull = new THREE.Mesh(hullGeo, hullMat);
-            hull.position.y = 0.5 * size;
-            hull.castShadow = true;
-            hull.receiveShadow = true;
+            // Палуба/корпус
+            const hullMat = new THREE.MeshLambertMaterial({ color: color });
+            const hull = new THREE.Mesh(new THREE.BoxGeometry(5 * size, 1.6 * size, 12 * size), hullMat);
+            hull.position.y = 0.8 * size;
+            if (!isLowPower) { hull.castShadow = true; hull.receiveShadow = true; }
             group.add(hull);
 
+            // Нижняя часть (для объёма)
+            const bottomMat = new THREE.MeshLambertMaterial({ color: 0x332211 });
+            const bottom = new THREE.Mesh(new THREE.BoxGeometry(4.5 * size, 1 * size, 11 * size), bottomMat);
+            bottom.position.y = -0.2 * size;
+            group.add(bottom);
+
             // Надстройка
-            const superGeo = new THREE.BoxGeometry(2.5 * size, 1.2 * size, 3 * size);
-            const superMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.5 });
-            const superstructure = new THREE.Mesh(superGeo, superMat);
-            superstructure.position.set(0, 1.5 * size, -1 * size);
-            superstructure.castShadow = true;
-            superstructure.receiveShadow = true;
+            const superMat = new THREE.MeshLambertMaterial({ color: 0xe0e0e0 });
+            const superstructure = new THREE.Mesh(
+                new THREE.BoxGeometry(2.8 * size, 1.4 * size, 4 * size),
+                superMat
+            );
+            superstructure.position.set(0, 2.0 * size, -0.5 * size);
+            if (!isLowPower) superstructure.castShadow = true;
             group.add(superstructure);
 
-            // Башня
-            const turretGeo = new THREE.CylinderGeometry(1 * size, 1.2 * size, 1 * size, 8);
-            const turretMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3 });
-            const turret = new THREE.Mesh(turretGeo, turretMat);
-            turret.position.set(0, 2.2 * size, 2 * size);
-            turret.castShadow = true;
-            turret.receiveShadow = true;
-            group.add(turret);
+            // Капитанский мостик
+            const bridgeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const bridge = new THREE.Mesh(
+                new THREE.BoxGeometry(2 * size, 0.8 * size, 1.5 * size),
+                bridgeMat
+            );
+            bridge.position.set(0, 3.0 * size, -1 * size);
+            group.add(bridge);
 
-            // Ствол
-            const barrelGeo = new THREE.CylinderGeometry(0.2 * size, 0.2 * size, 3 * size, 6);
-            const barrelMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-            const barrel = new THREE.Mesh(barrelGeo, barrelMat);
-            barrel.position.set(0, 2.2 * size, 3.5 * size);
-            barrel.rotation.x = Math.PI / 2;
-            barrel.castShadow = true;
-            group.add(barrel);
+            // Труба
+            const funnelMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            const funnel = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.6 * size, 0.7 * size, 1.5 * size, 8),
+                funnelMat
+            );
+            funnel.position.set(0, 3.0 * size, 1.0 * size);
+            group.add(funnel);
 
-            // Для игрока добавляем метку
-            if (isPlayer) {
-                const div = document.createElement('div');
-                div.textContent = '⚓ ВЫ';
-                div.style.color = '#ffd966';
-                div.style.fontWeight = 'bold';
-                div.style.textShadow = '1px 1px 3px black';
-                const label = new CSS2DObject(div);
-                label.position.set(0, 8 * size, 0);
-                group.add(label);
-            }
+            // Носовая башня
+            const turretMat = new THREE.MeshLambertMaterial({ color: 0x999999 });
+            const turret1 = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.1 * size, 1.3 * size, 1.1 * size, 8),
+                turretMat
+            );
+            turret1.position.set(0, 2.1 * size, 4 * size);
+            if (!isLowPower) turret1.castShadow = true;
+            group.add(turret1);
+
+            const barrelMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
+            const barrel1 = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18 * size, 0.18 * size, 3 * size, 6),
+                barrelMat
+            );
+            barrel1.position.set(0, 2.1 * size, 5.5 * size);
+            barrel1.rotation.x = Math.PI / 2;
+            group.add(barrel1);
+
+            // Кормовая башня
+            const turret2 = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.0 * size, 1.2 * size, 1.0 * size, 8),
+                turretMat
+            );
+            turret2.position.set(0, 2.0 * size, -4 * size);
+            group.add(turret2);
+
+            const barrel2 = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18 * size, 0.18 * size, 3 * size, 6),
+                barrelMat
+            );
+            barrel2.position.set(0, 2.0 * size, -5.5 * size);
+            barrel2.rotation.x = Math.PI / 2;
+            group.add(barrel2);
+
+            // Метка
+            const labelText = isPlayer ? '⚓ ВЫ' : (color === 0x3a7ab0 ? 'СОЮЗНИК' : 'ВРАГ');
+            const labelColor = isPlayer ? '#ffd966' : (color === 0x3a7ab0 ? '#3aff3a' : '#ff5a5a');
+            const div = document.createElement('div');
+            div.textContent = labelText;
+            div.style.color = labelColor;
+            div.style.fontWeight = 'bold';
+            div.style.fontSize = isMobile ? '10px' : '12px';
+            div.style.textShadow = '1px 1px 3px black';
+            div.style.background = 'rgba(0,0,0,0.5)';
+            div.style.padding = '2px 6px';
+            div.style.borderRadius = '10px';
+            div.style.whiteSpace = 'nowrap';
+            const label = new CSS2DObject(div);
+            label.position.set(0, 7 * size, 0);
+            group.add(label);
 
             return group;
         }
 
-        // ---------- СОЗДАНИЕ ОБЪЕКТОВ КАРТЫ (ОСТРОВА, БУИ) ----------
+        // ---------- MAP OBJECTS ----------
         function addMapObjects(mapId) {
-            // Удаляем старые объекты, если есть (кроме кораблей)
-            // (упрощённо — для прототипа просто добавляем заново)
-            
-            // Острова (просто кубы/цилиндры)
-            const islandMat = new THREE.MeshStandardMaterial({ color: 0x3a6a3a, roughness: 0.8 });
-            
-            if (mapId === 'north') {
-                // Северный остров
-                const island1 = new THREE.Mesh(new THREE.CylinderGeometry(15, 20, 8, 8), islandMat);
-                island1.position.set(-60, 2, -50);
-                island1.castShadow = true;
-                island1.receiveShadow = true;
-                scene.add(island1);
-                
-                const island2 = new THREE.Mesh(new THREE.CylinderGeometry(12, 15, 6, 6), islandMat);
-                island2.position.set(70, 1, -30);
-                island2.castShadow = true;
-                island2.receiveShadow = true;
-                scene.add(island2);
+            const islandMat = new THREE.MeshLambertMaterial({ color: 0x3a6a3a });
+            const islandMat2 = new THREE.MeshLambertMaterial({ color: 0x4a7a4a });
+            const seg = isLowPower ? 8 : 12;
 
-                // Буи
-                const buoyMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
-                for (let i = -100; i <= 100; i += 40) {
-                    const buoy = new THREE.Mesh(new THREE.SphereGeometry(1.5, 8, 8), buoyMat);
-                    buoy.position.set(i, 1, -120);
-                    buoy.castShadow = true;
-                    scene.add(buoy);
-                }
+            const islands = [];
+            if (mapId === 'north') {
+                islands.push({ pos: [-70, 3, -60], r1: 15, r2: 22, h: 10, mat: islandMat });
+                islands.push({ pos: [80, 2, -40], r1: 12, r2: 18, h: 8, mat: islandMat2 });
+                islands.push({ pos: [0, 2, 90], r1: 10, r2: 14, h: 6, mat: islandMat2 });
             } else if (mapId === 'south') {
-                const island1 = new THREE.Mesh(new THREE.CylinderGeometry(18, 22, 10, 8), islandMat);
-                island1.position.set(50, 2, 60);
-                island1.castShadow = true;
-                island1.receiveShadow = true;
-                scene.add(island1);
-                
-                const island2 = new THREE.Mesh(new THREE.CylinderGeometry(10, 12, 5, 6), islandMat);
-                island2.position.set(-70, 1, 40);
-                island2.castShadow = true;
-                island2.receiveShadow = true;
-                scene.add(island2);
+                islands.push({ pos: [60, 3, 70], r1: 18, r2: 24, h: 12, mat: islandMat });
+                islands.push({ pos: [-80, 2, 50], r1: 12, r2: 16, h: 7, mat: islandMat2 });
+                islands.push({ pos: [0, 2, -80], r1: 10, r2: 14, h: 6, mat: islandMat2 });
             } else if (mapId === 'east') {
-                const island1 = new THREE.Mesh(new THREE.CylinderGeometry(20, 25, 12, 8), islandMat);
-                island1.position.set(80, 3, 0);
-                island1.castShadow = true;
-                island1.receiveShadow = true;
-                scene.add(island1);
-                
-                const island2 = new THREE.Mesh(new THREE.CylinderGeometry(14, 18, 7, 6), islandMat);
-                island2.position.set(40, 2, -70);
-                island2.castShadow = true;
-                island2.receiveShadow = true;
-                scene.add(island2);
-            } else if (mapId === 'west') {
-                const island1 = new THREE.Mesh(new THREE.CylinderGeometry(16, 20, 9, 8), islandMat);
-                island1.position.set(-80, 2, 20);
-                island1.castShadow = true;
-                island1.receiveShadow = true;
-                scene.add(island1);
-                
-                const island2 = new THREE.Mesh(new THREE.CylinderGeometry(22, 28, 14, 8), islandMat);
-                island2.position.set(-40, 3, -60);
-                island2.castShadow = true;
-                island2.receiveShadow = true;
-                scene.add(island2);
+                islands.push({ pos: [90, 4, 0], r1: 20, r2: 28, h: 14, mat: islandMat });
+                islands.push({ pos: [50, 2, -80], r1: 14, r2: 20, h: 8, mat: islandMat2 });
+                islands.push({ pos: [-60, 2, 60], r1: 11, r2: 15, h: 6, mat: islandMat2 });
+            } else {
+                islands.push({ pos: [-90, 3, 20], r1: 16, r2: 22, h: 10, mat: islandMat });
+                islands.push({ pos: [-50, 4, -70], r1: 22, r2: 30, h: 15, mat: islandMat2 });
+                islands.push({ pos: [70, 2, 40], r1: 11, r2: 15, h: 6, mat: islandMat2 });
             }
+
+            islands.forEach(island => {
+                const geo = new THREE.CylinderGeometry(island.r1, island.r2, island.h, seg);
+                const mesh = new THREE.Mesh(geo, island.mat);
+                mesh.position.set(island.pos[0], island.pos[1], island.pos[2]);
+                if (!isLowPower) { mesh.castShadow = true; mesh.receiveShadow = true; }
+                scene.add(mesh);
+                // Дополнительный "холмик" сверху
+                const topGeo = new THREE.CylinderGeometry(island.r1 * 0.6, island.r1 * 0.8, island.h * 0.4, seg);
+                const topMesh = new THREE.Mesh(topGeo, islandMat);
+                topMesh.position.set(island.pos[0], island.pos[1] + island.h * 0.6, island.pos[2]);
+                scene.add(topMesh);
+            });
         }
 
-        // ---------- СОЗДАНИЕ ВРАГОВ И СОЮЗНИКОВ ----------
+        // ---------- SPAWN SHIPS ----------
         function spawnShips() {
-            // Удаляем старых
+            // Удаляем старые, если есть
+            if (playerShip) scene.remove(playerShip);
             allies.forEach(s => scene.remove(s));
             enemies.forEach(s => scene.remove(s));
-            allies = [];
-            enemies = [];
+            bullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
+            allies = []; enemies = []; bullets = [];
 
-            // Игрок
-            if (playerShip) scene.remove(playerShip);
-            playerShip = createShip(0x3a7ab0, 1.2, true);
-            playerShip.position.set(0, 0, 0);
-            playerShip.rotation.y = 0;
+            // === ИГРОК ===
+            playerShip = createShip(0x3a8ad0, 1.2, true);
+            playerShip.position.set(0, 0, 40);   // Немного впереди, чтобы видеть
+            playerShip.rotation.y = 0;           // Смотрит в -Z (на врагов)
             scene.add(playerShip);
+            console.log('✅ Игрок добавлен на позицию:', playerShip.position.toArray());
 
-            // Союзники (2 корабля)
-            for (let i = 0; i < 2; i++) {
-                const ally = createShip(0x3a7ab0, 1.0, false);
-                ally.position.set(-20 + i * 40, 0, 30);
-                ally.rotation.y = Math.PI;
+            // === СОЮЗНИКИ ===
+            const allyPositions = [
+                { x: -30, z: 50 },
+                { x: 30, z: 50 }
+            ];
+            allyPositions.forEach((p, i) => {
+                const ally = createShip(0x3a8ad0, 1.0, false);
+                ally.position.set(p.x, 0, p.z);
+                ally.rotation.y = 0;
                 scene.add(ally);
                 allies.push(ally);
-                
-                // Метка союзника
-                const div = document.createElement('div');
-                div.textContent = 'СОЮЗНИК';
-                div.style.color = '#3aff3a';
-                div.style.fontWeight = 'bold';
-                div.style.textShadow = '1px 1px 2px black';
-                const label = new CSS2DObject(div);
-                label.position.set(0, 7, 0);
-                ally.add(label);
-            }
+                console.log(`✅ Союзник ${i + 1} добавлен:`, ally.position.toArray());
+            });
 
-            // Враги (3 корабля)
-            for (let i = 0; i < 3; i++) {
-                const enemy = createShip(0xb03a3a, 1.0, false);
-                enemy.position.set(-40 + i * 40, 0, -70);
-                enemy.rotation.y = 0;
+            // === ВРАГИ ===
+            const enemyPositions = [
+                { x: -40, z: -50 },
+                { x: 0, z: -60 },
+                { x: 40, z: -50 }
+            ];
+            enemyPositions.forEach((p, i) => {
+                const enemy = createShip(0xd03a3a, 1.0, false);
+                enemy.position.set(p.x, 0, p.z);
+                enemy.rotation.y = Math.PI; // Смотрят на игрока (в +Z)
                 scene.add(enemy);
                 enemies.push(enemy);
-                
-                // Метка врага
-                const div = document.createElement('div');
-                div.textContent = 'ВРАГ';
-                div.style.color = '#ff5a5a';
-                div.style.fontWeight = 'bold';
-                div.style.textShadow = '1px 1px 2px black';
-                const label = new CSS2DObject(div);
-                label.position.set(0, 7, 0);
-                enemy.add(label);
-            }
+                console.log(`✅ Враг ${i + 1} добавлен:`, enemy.position.toArray());
+            });
+
+            console.log(`📊 Всего: игрок=${!!playerShip}, союзников=${allies.length}, врагов=${enemies.length}`);
         }
 
-        // ---------- АНИМАЦИЯ ВОДЫ ----------
+        // ---------- WATER ----------
         function animateOcean(time) {
-            if (ocean && ocean.geometry) {
-                const positions = ocean.geometry.attributes.position.array;
-                for (let i = 0; i < positions.length; i += 3) {
-                    const x = positions[i];
-                    const y = positions[i + 1];
-                    // волны
-                    positions[i + 2] = Math.sin(x * 0.05 + time * 2) * 1.5 + Math.cos(y * 0.03 + time * 1.5) * 1.2;
-                }
-                ocean.geometry.attributes.position.needsUpdate = true;
-                ocean.geometry.computeVertexNormals();
+            if (!ocean || !ocean.geometry) return;
+            const positions = ocean.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                const x = positions[i];
+                const y = positions[i + 1];
+                positions[i + 2] = Math.sin(x * 0.04 + time * 1.5) * 1.0
+                                 + Math.cos(y * 0.03 + time * 1.0) * 0.8;
             }
+            ocean.geometry.attributes.position.needsUpdate = true;
+            if (!isLowPower) ocean.geometry.computeVertexNormals();
         }
 
-        // ---------- ОБНОВЛЕНИЕ ИГРЫ ----------
-        function updateGame(delta) {
+        // ---------- GAME LOOP ----------
+        function updateGame(dt) {
             if (!gameActive || !playerShip) return;
+            dt = Math.min(dt, 0.05);
 
-            // Движение игрока (WASD)
-            const speed = 0.5;
-            const rotSpeed = 0.03;
-            
-            if (keys.w) {
-                playerShip.position.x += Math.sin(playerShip.rotation.y) * speed;
-                playerShip.position.z += Math.cos(playerShip.rotation.y) * speed;
-            }
-            if (keys.s) {
-                playerShip.position.x -= Math.sin(playerShip.rotation.y) * speed * 0.6;
-                playerShip.position.z -= Math.cos(playerShip.rotation.y) * speed * 0.6;
-            }
-            if (keys.a) {
-                playerShip.rotation.y += rotSpeed;
-            }
-            if (keys.d) {
-                playerShip.rotation.y -= rotSpeed;
+            const speed = 25 * dt;
+            const rotSpeed = 1.8 * dt;
+
+            let moveForward = 0;
+            if (keys.w) moveForward += 1;
+            if (keys.s) moveForward -= 0.6;
+            if (keys.a) playerShip.rotation.y += rotSpeed;
+            if (keys.d) playerShip.rotation.y -= rotSpeed;
+
+            if (joystick.active) {
+                moveForward += -joystick.y;
+                playerShip.rotation.y -= joystick.x * rotSpeed * 1.4;
             }
 
-            // Ограничение позиции
-            playerShip.position.x = Math.max(-180, Math.min(180, playerShip.position.x));
-            playerShip.position.z = Math.max(-180, Math.min(180, playerShip.position.z));
+            if (Math.abs(moveForward) > 0.01) {
+                playerShip.position.x += Math.sin(playerShip.rotation.y) * speed * moveForward;
+                playerShip.position.z += Math.cos(playerShip.rotation.y) * speed * moveForward;
+            }
 
-            // Камера следует за игроком (третье лицо)
-            const camOffset = new THREE.Vector3(0, 25, -50);
-            camOffset.applyQuaternion(playerShip.quaternion);
-            const targetCamPos = playerShip.position.clone().add(camOffset);
-            camera.position.lerp(targetCamPos, 0.05);
-            
-            const lookAtPoint = playerShip.position.clone().add(new THREE.Vector3(0, 5, 30).applyQuaternion(playerShip.quaternion));
-            camera.lookAt(lookAtPoint);
+            // Ограничения карты
+            const L = 250;
+            playerShip.position.x = Math.max(-L, Math.min(L, playerShip.position.x));
+            playerShip.position.z = Math.max(-L, Math.min(L, playerShip.position.z));
 
-            // Враги следуют за игроком (простой ИИ)
-            enemies.forEach((enemy, idx) => {
-                const dir = new THREE.Vector3().subVectors(playerShip.position, enemy.position).normalize();
-                const dist = enemy.position.distanceTo(playerShip.position);
-                if (dist > 30) {
-                    enemy.position.x += dir.x * 0.2;
-                    enemy.position.z += dir.z * 0.2;
+            // === КАМЕРА ===
+            _v1.set(0, 28, -55).applyQuaternion(playerShip.quaternion);
+            _v2.copy(playerShip.position).add(_v1);
+            camera.position.lerp(_v2, 0.08);
+
+            _v1.set(0, 5, 25).applyQuaternion(playerShip.quaternion);
+            _v2.copy(playerShip.position).add(_v1);
+            camera.lookAt(_v2);
+
+            // === ВРАГИ ===
+            for (let i = 0; i < enemies.length; i++) {
+                const e = enemies[i];
+                _v1.subVectors(playerShip.position, e.position);
+                const dist = _v1.length();
+                if (dist > 25) {
+                    _v1.normalize();
+                    e.position.x += _v1.x * 0.15;
+                    e.position.z += _v1.z * 0.15;
+                    e.rotation.y = Math.atan2(_v1.x, _v1.z);
                 }
-                // Поворот в сторону игрока
-                const angle = Math.atan2(dir.x, dir.z);
-                enemy.rotation.y = angle;
-            });
-
-            // Союзники следуют за игроком на расстоянии
-            allies.forEach((ally, idx) => {
-                const offset = new THREE.Vector3(-20 + idx * 40, 0, 25);
-                offset.applyQuaternion(playerShip.quaternion);
-                const targetPos = playerShip.position.clone().add(offset);
-                ally.position.lerp(targetPos, 0.02);
-                ally.rotation.y = playerShip.rotation.y;
-            });
-
-            // Стрельба (пробел)
-            if (keys.space) {
-                // Визуальный эффект выстрела
-                shootEffect();
-                keys.space = false; // одно нажатие - один выстрел
-            }
-
-            // Проверка столкновений с врагами (упрощённо)
-            enemies.forEach((enemy, idx) => {
-                const dist = enemy.position.distanceTo(playerShip.position);
-                if (dist < 12) {
-                    // Урон игроку
-                    playerHealth -= 0.2;
+                if (dist < 14) {
+                    playerHealth -= 0.4;
                     if (playerHealth < 0) playerHealth = 0;
                     updateHUD();
-                    // Отталкивание
-                    const pushDir = new THREE.Vector3().subVectors(playerShip.position, enemy.position).normalize();
-                    playerShip.position.add(pushDir.multiplyScalar(1.5));
+                    _v2.subVectors(playerShip.position, e.position).normalize();
+                    playerShip.position.x += _v2.x * 2;
+                    playerShip.position.z += _v2.z * 2;
                 }
-            });
+            }
 
-            // Победа/поражение
+            // === СОЮЗНИКИ ===
+            for (let i = 0; i < allies.length; i++) {
+                const a = allies[i];
+                const side = i === 0 ? -30 : 30;
+                _v1.set(side, 0, 30).applyQuaternion(playerShip.quaternion);
+                _v2.copy(playerShip.position).add(_v1);
+                a.position.lerp(_v2, 0.04);
+                a.rotation.y = playerShip.rotation.y;
+            }
+
+            // === ПУЛИ ===
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.position.addScaledVector(b.userData.velocity, dt);
+                b.userData.life -= dt;
+
+                let hit = false;
+                for (let j = 0; j < enemies.length; j++) {
+                    if (b.position.distanceTo(enemies[j].position) < 9) {
+                        score += 10;
+                        updateHUD();
+                        const explosion = new THREE.Mesh(
+                            new THREE.SphereGeometry(4, 6, 6),
+                            new THREE.MeshBasicMaterial({ color: 0xff6600 })
+                        );
+                        explosion.position.copy(enemies[j].position);
+                        scene.add(explosion);
+                        setTimeout(() => scene.remove(explosion), 250);
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit || b.userData.life <= 0) {
+                    scene.remove(b);
+                    b.geometry.dispose();
+                    b.material.dispose();
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // === СТРЕЛЬБА ===
+            fireCooldown -= dt;
+            if ((keys.space || joystick.fire) && fireCooldown <= 0) {
+                shoot();
+                keys.space = false;
+                joystick.fire = false;
+                fireCooldown = 0.3;
+            }
+
             if (playerHealth <= 0) {
                 gameActive = false;
-                alert('Корабль потоплен! Игра окончена.');
-                location.reload();
+                setTimeout(() => { alert('Корабль потоплен!'); location.reload(); }, 200);
             }
         }
 
-        function shootEffect() {
-            // Создаём сферу-снаряд
-            const bulletGeo = new THREE.SphereGeometry(1, 4, 4);
-            const bulletMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xff5500 });
+        function shoot() {
+            if (!playerShip) return;
+            const bulletGeo = new THREE.SphereGeometry(0.8, 5, 5);
+            const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
             const bullet = new THREE.Mesh(bulletGeo, bulletMat);
-            
-            const startPos = playerShip.position.clone().add(new THREE.Vector3(0, 5, 10).applyQuaternion(playerShip.quaternion));
-            bullet.position.copy(startPos);
-            
-            const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(playerShip.quaternion);
-            bullet.userData.velocity = direction.multiplyScalar(4);
-            
+
+            _v1.set(0, 2.5, 6).applyQuaternion(playerShip.quaternion);
+            bullet.position.copy(playerShip.position).add(_v1);
+
+            _v1.set(0, 0, 1).applyQuaternion(playerShip.quaternion);
+            bullet.userData.velocity = _v1.clone().multiplyScalar(80);
+            bullet.userData.life = 2;
+
             scene.add(bullet);
-            
-            // Анимация снаряда
-            const startTime = performance.now();
-            function animateBullet() {
-                const elapsed = (performance.now() - startTime) / 1000;
-                if (elapsed > 2) {
-                    scene.remove(bullet);
-                    return;
-                }
-                bullet.position.add(bullet.userData.velocity.clone().multiplyScalar(0.016));
-                
-                // Проверка попадания во врагов
-                enemies.forEach((enemy, idx) => {
-                    if (bullet.position.distanceTo(enemy.position) < 8) {
-                        scene.remove(bullet);
-                        // Визуальный эффект попадания
-                        const explosion = new THREE.Mesh(new THREE.SphereGeometry(5, 8, 8), new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff3300 }));
-                        explosion.position.copy(enemy.position);
-                        scene.add(explosion);
-                        setTimeout(() => scene.remove(explosion), 300);
-                        
-                        // Урон врагу (визуально)
-                        score += 10;
-                        updateHUD();
-                        return;
-                    }
-                });
-                
-                requestAnimationFrame(animateBullet);
-            }
-            animateBullet();
+            bullets.push(bullet);
         }
 
         // ---------- HUD ----------
         function updateHUD() {
             const hud = document.getElementById('ui-container');
             if (!hud) return;
-            
+            const hint = isMobile ? 'Джойстик — движение | ОГОНЬ — выстрел'
+                                  : 'W/S — ход | A/D — руль | ПРОБЕЛ — огонь';
             hud.innerHTML = `
                 <div class="hud">
                     <div class="hud-left">
-                        <div>❤️ Прочность: ${Math.round(playerHealth)}%</div>
+                        <div>❤️ ${Math.round(playerHealth)}%</div>
                         <div class="health-bar"><div class="health-fill" style="width:${playerHealth}%"></div></div>
-                        <div style="margin-top:8px;">🎯 Очки: <span class="score">${score}</span></div>
                     </div>
                     <div class="hud-right">
-                        <div>⚓ Союзники: ${allies.length}</div>
-                        <div>💀 Враги: ${enemies.length}</div>
+                        <div>🎯 <span class="score">${score}</span></div>
+                        <div style="font-size:11px;">💀 ${enemies.length} | ⚓ ${allies.length}</div>
                     </div>
                 </div>
-                <div class="controls-hint">W/S — вперёд/назад | A/D — поворот | ПРОБЕЛ — выстрел</div>
+                <div class="controls-hint desktop-hint">${hint}</div>
             `;
         }
 
-        // ---------- ЗАПУСК ИГРЫ ----------
+        // ---------- START GAME ----------
         function startGame(mapId) {
-            // Очистка старых объектов карты
-            // (упрощённо: перезагружаем сцену заново, но для прототипа просто добавим)
-            // В реальном проекте нужно удалять объекты, но здесь просто перезапустим сцену
-            
-            // Удаляем всё кроме камеры и рендерера
-            while(scene.children.length > 0) scene.remove(scene.children[0]);
-            
-            // Пересоздаём сцену
-            initScene();
-            
-            // Добавляем объекты карты
+            console.log('🚀 Старт игры. Карта:', mapId);
+
+            // Очищаем только игровые объекты, НЕ трогаем свет/камеру
+            if (playerShip) { scene.remove(playerShip); playerShip = null; }
+            allies.forEach(s => scene.remove(s));
+            enemies.forEach(s => scene.remove(s));
+            bullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
+            allies = []; enemies = []; bullets = [];
+
+            // Удаляем старые острова (объекты с userData.isMapObject)
+            const toRemove = [];
+            scene.traverse(obj => {
+                if (obj.userData && obj.userData.isMapObject) toRemove.push(obj);
+            });
+            toRemove.forEach(o => scene.remove(o));
+
             addMapObjects(mapId);
-            
-            // Спавним корабли
             spawnShips();
-            
-            // Сбрасываем параметры
+
             playerHealth = 100;
             score = 0;
             gameActive = true;
-            
-            // Обновляем HUD
+
             updateHUD();
-            
-            // Скрываем меню
+
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mapScreen').classList.add('hidden');
-            
-            // Настройка камеры
-            camera.position.set(0, 30, 80);
-        }
 
-        // ---------- ОБРАБОТЧИКИ СОБЫТИЙ ----------
-        function setupEventListeners() {
-            // Клавиатура
-            window.addEventListener('keydown', (e) => {
-                switch(e.code) {
-                    case 'KeyW': keys.w = true; e.preventDefault(); break;
-                    case 'KeyA': keys.a = true; e.preventDefault(); break;
-                    case 'KeyS': keys.s = true; e.preventDefault(); break;
-                    case 'KeyD': keys.d = true; e.preventDefault(); break;
-                    case 'Space': if (gameActive) { keys.space = true; e.preventDefault(); } break;
-                }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                switch(e.code) {
-                    case 'KeyW': keys.w = false; break;
-                    case 'KeyA': keys.a = false; break;
-                    case 'KeyS': keys.s = false; break;
-                    case 'KeyD': keys.d = false; break;
-                }
-            });
-
-            // Кнопки входа
-            document.getElementById('loginBtn').addEventListener('click', () => {
-                const username = document.getElementById('username').value || 'Адмирал';
-                console.log('Вход:', username);
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('mapScreen').classList.remove('hidden');
-            });
-            
-            document.getElementById('registerBtn').addEventListener('click', () => {
-                alert('Регистрация успешна! Теперь войдите.');
-            });
-            
-            // Выбор карты
-            const mapGrid = document.getElementById('mapGrid');
-            const maps = [
-                { id: 'north', name: 'Северный форпост', desc: 'Ледяные воды' },
-                { id: 'south', name: 'Южные острова', desc: 'Тёплое море' },
-                { id: 'east', name: 'Восточный пролив', desc: 'Опасные рифы' },
-                { id: 'west', name: 'Западный архипелаг', desc: 'Туманные берега' }
-            ];
-            
-            maps.forEach(map => {
-                const card = document.createElement('div');
-                card.className = 'map-card';
-                card.dataset.mapId = map.id;
-                card.innerHTML = `<h3>${map.name}</h3><p>${map.desc}</p>`;
-                card.addEventListener('click', () => {
-                    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    document.getElementById('startBattleBtn').disabled = false;
-                    currentMap = map.id;
-                });
-                mapGrid.appendChild(card);
-            });
-            
-            // Кнопка старта
-            document.getElementById('startBattleBtn').addEventListener('click', () => {
-                startGame(currentMap);
-            });
-        }
-
-        // ---------- ГЛАВНЫЙ ЦИКЛ ----------
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            const delta = clock.getDelta();
-            const elapsedTime = performance.now() / 1000;
-            
-            // Анимация воды
-            animateOcean(elapsedTime);
-            
-            // Обновление игры
-            if (gameActive) {
-                updateGame(delta);
-            } else if (playerShip) {
-                // Если игра не активна, но корабль есть — камера смотрит на него
-                if (playerShip) {
-                    const camOffset = new THREE.Vector3(0, 25, -50);
-                    camOffset.applyQuaternion(playerShip.quaternion);
-                    const targetCamPos = playerShip.position.clone().add(camOffset);
-                    camera.position.lerp(targetCamPos, 0.05);
-                    camera.lookAt(playerShip.position);
-                }
+            if (isMobile) {
+                document.getElementById('mobileControls').classList.add('active');
             }
-            
-            // Рендер
+
+            // Помечаем острова как map-объекты
+            scene.traverse(obj => {
+                if (obj.geometry && obj.geometry.type === 'CylinderGeometry' && !obj.userData.isMapObject) {
+                    obj.userData.isMapObject = true;
+                }
+            });
+
+            // Принудительный рендер кадра
             renderer.render(scene, camera);
             labelRenderer.render(scene, camera);
         }
 
-        // ---------- СТАРТ ПРИЛОЖЕНИЯ ----------
-        window.onload = () => {
-            initScene();
+        // ---------- MOBILE CONTROLS ----------
+        function setupMobileControls() {
+            const zone = document.getElementById('joystickZone');
+            const knob = document.getElementById('joystickKnob');
+            const fireBtn = document.getElementById('fireButton');
+            const maxDist = 40;
+
+            function updateJoy(touch) {
+                const rect = zone.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                let dx = touch.clientX - cx;
+                let dy = touch.clientY - cy;
+                const d = Math.hypot(dx, dy);
+                if (d > maxDist) { dx = dx / d * maxDist; dy = dy / d * maxDist; }
+                knob.style.transform = `translate(${dx}px, ${dy}px)`;
+                joystick.x = dx / maxDist;
+                joystick.y = dy / maxDist;
+            }
+
+            zone.addEventListener('touchstart', e => {
+                e.preventDefault();
+                const t = e.changedTouches[0];
+                joystick.touchId = t.identifier;
+                joystick.active = true;
+                updateJoy(t);
+            }, { passive: false });
+
+            zone.addEventListener('touchmove', e => {
+                e.preventDefault();
+                if (!joystick.active) return;
+                for (const t of e.changedTouches) {
+                    if (t.identifier === joystick.touchId) { updateJoy(t); break; }
+                }
+            }, { passive: false });
+
+            function endJoy(e) {
+                e.preventDefault();
+                for (const t of e.changedTouches) {
+                    if (t.identifier === joystick.touchId) {
+                        joystick.active = false;
+                        joystick.x = 0; joystick.y = 0;
+                        joystick.touchId = null;
+                        knob.style.transform = 'translate(0,0)';
+                        break;
+                    }
+                }
+            }
+            zone.addEventListener('touchend', endJoy, { passive: false });
+            zone.addEventListener('touchcancel', endJoy, { passive: false });
+
+            fireBtn.addEventListener('touchstart', e => {
+                e.preventDefault();
+                joystick.fire = true;
+            }, { passive: false });
+            // Также клик мышью для десктопной отладки
+            fireBtn.addEventListener('click', () => { joystick.fire = true; });
+        }
+
+        // ---------- INPUT ----------
+        function setupEventListeners() {
+            window.addEventListener('keydown', e => {
+                switch (e.code) {
+                    case 'KeyW': case 'ArrowUp': keys.w = true; e.preventDefault(); break;
+                    case 'KeyA': case 'ArrowLeft': keys.a = true; e.preventDefault(); break;
+                    case 'KeyS': case 'ArrowDown': keys.s = true; e.preventDefault(); break;
+                    case 'KeyD': case 'ArrowRight': keys.d = true; e.preventDefault(); break;
+                    case 'Space': keys.space = true; e.preventDefault(); break;
+                }
+            });
+            window.addEventListener('keyup', e => {
+                switch (e.code) {
+                    case 'KeyW': case 'ArrowUp': keys.w = false; break;
+                    case 'KeyA': case 'ArrowLeft': keys.a = false; break;
+                    case 'KeyS': case 'ArrowDown': keys.s = false; break;
+                    case 'KeyD': case 'ArrowRight': keys.d = false; break;
+                }
+            });
+
+            document.getElementById('loginBtn').addEventListener('click', () => {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('mapScreen').classList.remove('hidden');
+            });
+            document.getElementById('registerBtn').addEventListener('click', () => {
+                alert('Регистрация успешна!');
+            });
+
+            const mapGrid = document.getElementById('mapGrid');
+            const maps = [
+                { id: 'north', name: 'Север', desc: 'Ледяные воды' },
+                { id: 'south', name: 'Юг', desc: 'Тёплое море' },
+                { id: 'east', name: 'Восток', desc: 'Опасные рифы' },
+                { id: 'west', name: 'Запад', desc: 'Туманные берега' }
+            ];
+            maps.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'map-card';
+                card.innerHTML = `<h3>${m.name}</h3><p>${m.desc}</p>`;
+                const select = () => {
+                    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    document.getElementById('startBattleBtn').disabled = false;
+                    currentMap = m.id;
+                };
+                card.addEventListener('click', select);
+                card.addEventListener('touchend', e => { e.preventDefault(); select(); }, { passive: false });
+                mapGrid.appendChild(card);
+            });
+
+            document.getElementById('startBattleBtn').addEventListener('click', () => startGame(currentMap));
+
+            document.addEventListener('touchmove', e => {
+                if (gameActive) e.preventDefault();
+            }, { passive: false });
+        }
+
+        // ---------- RENDER LOOP ----------
+        let lastFrameTime = 0;
+        let frameNum = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const now = performance.now();
+
+            if (isLowPower && now - lastFrameTime < 28) return;
+            lastFrameTime = now;
+            frameNum++;
+
+            if (!isLowPower || frameNum % 2 === 0) {
+                animateOcean(now / 1000);
+            }
+
+            if (gameActive) {
+                updateGame(delta);
+            } else if (playerShip) {
+                _v1.set(0, 28, -55).applyQuaternion(playerShip.quaternion);
+                _v2.copy(playerShip.position).add(_v1);
+                camera.position.lerp(_v2, 0.05);
+                camera.lookAt(playerShip.position);
+            }
+
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        // ---------- BOOT ----------
+        window.addEventListener('load', () => {
+            console.log('🔧 Инициализация...');
+            initWorld();
             setupEventListeners();
-            
-            // Скрываем HUD до начала игры
-            document.getElementById('ui-container').innerHTML = '';
-            
-            // Для теста: автоматический вход через 1 секунду (можно закомментировать)
-            // setTimeout(() => {
-            //     document.getElementById('authScreen').classList.add('hidden');
-            //     document.getElementById('mapScreen').classList.remove('hidden');
-            // }, 1000);
-        };
+            if (isMobile) setupMobileControls();
+            animate();
+            console.log('✅ Готово. isMobile =', isMobile, '| isLowPower =', isLowPower);
+        });
     </script>
 </body>
-  </html>
+</html>
