@@ -26,16 +26,19 @@
             background: linear-gradient(135deg, #001428 0%, #002a4a 100%);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            pointer-events: auto; transition: opacity 0.4s;
+            pointer-events: auto;
             z-index: 20; padding: 20px; overflow-y: auto;
         }
-        .menu-screen.hidden { opacity: 0; pointer-events: none; display: none; }
+        .menu-screen.hidden {
+            display: none !important;
+        }
         .auth-box, .map-select {
             background: rgba(10, 30, 50, 0.95);
             padding: 25px 20px; border-radius: 15px;
             border: 2px solid #4a8bb9;
             box-shadow: 0 0 30px rgba(74, 139, 185, 0.5);
             text-align: center; width: 100%; max-width: 380px;
+            pointer-events: auto;
         }
         h1, h2 { color: #aad4ff; margin: 0 0 10px; letter-spacing: 2px; }
         h1 { font-size: 20px; }
@@ -45,6 +48,7 @@
             margin: 10px 0; border-radius: 8px;
             border: 1px solid #2a5a7a; background: #1a2f3f;
             color: white; font-size: 16px; -webkit-appearance: none;
+            pointer-events: auto;
         }
         button {
             background: #1e5a8a; color: white; border: none;
@@ -55,9 +59,12 @@
             letter-spacing: 1px; pointer-events: auto;
             -webkit-appearance: none; touch-action: manipulation;
             min-width: 120px;
+            position: relative;
+            z-index: 25;
         }
-        button:active { background: #2e7ab0; transform: scale(0.97); }
-        button:disabled { background: #444; border-bottom-color: #222; opacity: 0.5; }
+        button:hover:not(:disabled) { background: #2e7ab0; }
+        button:active:not(:disabled) { transform: scale(0.97); }
+        button:disabled { background: #444; border-bottom-color: #222; opacity: 0.5; cursor: not-allowed; }
         .map-grid {
             display: grid; grid-template-columns: 1fr 1fr;
             gap: 10px; margin: 15px 0;
@@ -68,7 +75,10 @@
             border: 2px solid #2e6a92;
             transition: 0.2s; pointer-events: auto;
             touch-action: manipulation;
+            position: relative;
+            z-index: 25;
         }
+        .map-card:hover { background: #2a5f7a; }
         .map-card:active { background: #2a5f7a; transform: scale(0.97); }
         .map-card.selected {
             border-color: #ffd966; background: #2a5f7a;
@@ -100,6 +110,43 @@
             width: 100%; transition: width 0.3s;
         }
         .score { color: #ffd966; font-weight: bold; }
+
+        /* Экран победы */
+        #victoryScreen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,80,40,0.95), rgba(0,20,10,0.98));
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            pointer-events: auto;
+            color: white;
+            padding: 20px;
+        }
+        #victoryScreen.show {
+            display: flex;
+        }
+        #victoryScreen h1 {
+            font-size: 60px;
+            color: #ffd966;
+            text-shadow: 0 0 30px #ffd966, 3px 3px 8px black;
+            margin: 0;
+            letter-spacing: 8px;
+            animation: pulse 1.2s infinite alternate;
+        }
+        #victoryScreen p {
+            font-size: 20px;
+            color: #aad4ff;
+            margin: 20px 0;
+            text-align: center;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.08); }
+        }
 
         /* Мобильные контролы */
         #mobileControls {
@@ -156,6 +203,7 @@
             .map-card p { font-size: 12px; }
             .hud-left, .hud-right { font-size: 14px; padding: 10px 18px; }
             #mobileControls { display: none !important; }
+            #victoryScreen h1 { font-size: 90px; }
         }
         @media (max-height: 500px) and (orientation: landscape) {
             .auth-box, .map-select { padding: 15px 20px; max-height: 95vh; overflow-y: auto; }
@@ -165,6 +213,7 @@
             .map-card p { display: none; }
             button { padding: 10px 16px; font-size: 14px; }
             input { padding: 10px; font-size: 14px; }
+            #victoryScreen h1 { font-size: 40px; letter-spacing: 4px; }
         }
         @media (hover: none) and (pointer: coarse) {
             .desktop-hint { display: none; }
@@ -173,6 +222,14 @@
 </head>
 <body>
     <div id="ui-container"></div>
+
+    <!-- Экран победы -->
+    <div id="victoryScreen">
+        <h1>ПОБЕДА!</h1>
+        <p>Вражеский флот уничтожен</p>
+        <p style="font-size:16px; color:#ffd966;">Очки: <span id="victoryScore">0</span></p>
+        <button id="backToMenuBtn" style="margin-top:20px; background:#2e8a4a; border-bottom-color:#0e5a2a; font-size:18px; padding:16px 40px;">К ВЫБОРУ КАРТЫ</button>
+    </div>
 
     <!-- Мобильные контролы -->
     <div id="mobileControls">
@@ -202,6 +259,7 @@
             <h2>ВЫБОР КАРТЫ</h2>
             <div class="map-grid" id="mapGrid"></div>
             <button id="startBattleBtn" disabled>В БОЙ!</button>
+            <p id="mapStatus" style="font-size:12px; color:#7a9ab0; margin-top:10px;">Выберите карту</p>
         </div>
     </div>
 
@@ -218,14 +276,12 @@
         import * as THREE from 'three';
         import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-        // ---------- DETECT DEVICE ----------
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
                         || ('ontouchstart' in window && window.innerWidth < 1024);
         const isLowPower = isMobile || window.innerWidth < 768;
 
-        // ---------- GLOBAL ----------
         let scene, camera, renderer, labelRenderer;
-        let playerShip, allies = [], enemies = [], bullets = [];
+        let playerShip, allies = [], enemies = [], bullets = [], enemyBullets = [];
         let ocean, sky;
         const clock = new THREE.Clock();
 
@@ -233,18 +289,22 @@
         let playerHealth = 100;
         let score = 0;
         let worldInitialized = false;
+        let victoryShown = false;
+        let selectedMapId = null;
+
+        const HITS_TO_KILL = 3;
 
         const keys = { w: false, a: false, s: false, d: false, space: false };
         let currentMap = 'north';
+        let currentUsername = 'Адмирал';
 
         const joystick = { active: false, x: 0, y: 0, touchId: null, fire: false };
         let fireCooldown = 0;
 
         const _v1 = new THREE.Vector3();
         const _v2 = new THREE.Vector3();
-        const _v3 = new THREE.Vector3();
 
-        // ---------- INIT WORLD (только один раз!) ----------
+        // ---------- INIT WORLD ----------
         function initWorld() {
             if (worldInitialized) return;
             worldInitialized = true;
@@ -281,10 +341,8 @@
             labelRenderer.domElement.style.pointerEvents = 'none';
             document.body.appendChild(labelRenderer.domElement);
 
-            // Свет
             scene.add(new THREE.AmbientLight(0x8899bb, 1.0));
-            const hemi = new THREE.HemisphereLight(0x88bbff, 0x224466, 0.6);
-            scene.add(hemi);
+            scene.add(new THREE.HemisphereLight(0x88bbff, 0x224466, 0.6));
 
             const sun = new THREE.DirectionalLight(0xffeedd, isLowPower ? 1.0 : 1.3);
             sun.position.set(120, 200, 80);
@@ -302,7 +360,6 @@
             }
             scene.add(sun);
 
-            // Океан
             const segs = isLowPower ? 24 : 60;
             const oceanGeo = new THREE.PlaneGeometry(2000, 2000, segs, segs);
             const oceanMat = new THREE.MeshStandardMaterial({
@@ -318,7 +375,6 @@
             if (!isLowPower) ocean.receiveShadow = true;
             scene.add(ocean);
 
-            // Небо
             const skyGeo = new THREE.SphereGeometry(900, isLowPower ? 16 : 32, isLowPower ? 8 : 16);
             const skyMat = new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide });
             sky = new THREE.Mesh(skyGeo, skyMat);
@@ -337,23 +393,20 @@
         }
 
         // ---------- CREATE SHIP ----------
-        function createShip(color, size = 1, isPlayer = false) {
+        function createShip(color, size = 1, type = 'player') {
             const group = new THREE.Group();
 
-            // Палуба/корпус
             const hullMat = new THREE.MeshLambertMaterial({ color: color });
             const hull = new THREE.Mesh(new THREE.BoxGeometry(5 * size, 1.6 * size, 12 * size), hullMat);
             hull.position.y = 0.8 * size;
             if (!isLowPower) { hull.castShadow = true; hull.receiveShadow = true; }
             group.add(hull);
 
-            // Нижняя часть (для объёма)
             const bottomMat = new THREE.MeshLambertMaterial({ color: 0x332211 });
             const bottom = new THREE.Mesh(new THREE.BoxGeometry(4.5 * size, 1 * size, 11 * size), bottomMat);
             bottom.position.y = -0.2 * size;
             group.add(bottom);
 
-            // Надстройка
             const superMat = new THREE.MeshLambertMaterial({ color: 0xe0e0e0 });
             const superstructure = new THREE.Mesh(
                 new THREE.BoxGeometry(2.8 * size, 1.4 * size, 4 * size),
@@ -363,25 +416,20 @@
             if (!isLowPower) superstructure.castShadow = true;
             group.add(superstructure);
 
-            // Капитанский мостик
-            const bridgeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
             const bridge = new THREE.Mesh(
                 new THREE.BoxGeometry(2 * size, 0.8 * size, 1.5 * size),
-                bridgeMat
+                new THREE.MeshLambertMaterial({ color: 0xffffff })
             );
             bridge.position.set(0, 3.0 * size, -1 * size);
             group.add(bridge);
 
-            // Труба
-            const funnelMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
             const funnel = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.6 * size, 0.7 * size, 1.5 * size, 8),
-                funnelMat
+                new THREE.MeshLambertMaterial({ color: 0x222222 })
             );
             funnel.position.set(0, 3.0 * size, 1.0 * size);
             group.add(funnel);
 
-            // Носовая башня
             const turretMat = new THREE.MeshLambertMaterial({ color: 0x999999 });
             const turret1 = new THREE.Mesh(
                 new THREE.CylinderGeometry(1.1 * size, 1.3 * size, 1.1 * size, 8),
@@ -400,7 +448,6 @@
             barrel1.rotation.x = Math.PI / 2;
             group.add(barrel1);
 
-            // Кормовая башня
             const turret2 = new THREE.Mesh(
                 new THREE.CylinderGeometry(1.0 * size, 1.2 * size, 1.0 * size, 8),
                 turretMat
@@ -416,19 +463,33 @@
             barrel2.rotation.x = Math.PI / 2;
             group.add(barrel2);
 
-            // Метка
-            const labelText = isPlayer ? '⚓ ВЫ' : (color === 0x3a7ab0 ? 'СОЮЗНИК' : 'ВРАГ');
-            const labelColor = isPlayer ? '#ffd966' : (color === 0x3a7ab0 ? '#3aff3a' : '#ff5a5a');
+            // Метки
+            let labelText, labelColor, labelBg;
+            if (type === 'player') {
+                labelText = '⚓ ' + currentUsername.toUpperCase();
+                labelColor = '#ffd966';
+                labelBg = 'rgba(120,80,0,0.7)';
+            } else if (type === 'ally') {
+                labelText = 'СОЮЗНИК';
+                labelColor = '#88ff88';
+                labelBg = 'rgba(0,80,0,0.7)';
+            } else {
+                labelText = 'ВРАГ';
+                labelColor = '#ff8888';
+                labelBg = 'rgba(120,0,0,0.7)';
+            }
+
             const div = document.createElement('div');
             div.textContent = labelText;
             div.style.color = labelColor;
             div.style.fontWeight = 'bold';
             div.style.fontSize = isMobile ? '10px' : '12px';
             div.style.textShadow = '1px 1px 3px black';
-            div.style.background = 'rgba(0,0,0,0.5)';
+            div.style.background = labelBg;
             div.style.padding = '2px 6px';
             div.style.borderRadius = '10px';
             div.style.whiteSpace = 'nowrap';
+            div.style.border = '1px solid ' + labelColor;
             const label = new CSS2DObject(div);
             label.position.set(0, 7 * size, 0);
             group.add(label);
@@ -465,65 +526,62 @@
                 const geo = new THREE.CylinderGeometry(island.r1, island.r2, island.h, seg);
                 const mesh = new THREE.Mesh(geo, island.mat);
                 mesh.position.set(island.pos[0], island.pos[1], island.pos[2]);
+                mesh.userData.isMapObject = true;
                 if (!isLowPower) { mesh.castShadow = true; mesh.receiveShadow = true; }
                 scene.add(mesh);
-                // Дополнительный "холмик" сверху
+
                 const topGeo = new THREE.CylinderGeometry(island.r1 * 0.6, island.r1 * 0.8, island.h * 0.4, seg);
                 const topMesh = new THREE.Mesh(topGeo, islandMat);
                 topMesh.position.set(island.pos[0], island.pos[1] + island.h * 0.6, island.pos[2]);
+                topMesh.userData.isMapObject = true;
                 scene.add(topMesh);
             });
         }
 
-        // ---------- SPAWN SHIPS ----------
+        // ---------- SPAWN ----------
         function spawnShips() {
-            // Удаляем старые, если есть
             if (playerShip) scene.remove(playerShip);
             allies.forEach(s => scene.remove(s));
             enemies.forEach(s => scene.remove(s));
             bullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
-            allies = []; enemies = []; bullets = [];
+            enemyBullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
+            allies = []; enemies = []; bullets = []; enemyBullets = [];
 
-            // === ИГРОК ===
-            playerShip = createShip(0x3a8ad0, 1.2, true);
-            playerShip.position.set(0, 0, 40);   // Немного впереди, чтобы видеть
-            playerShip.rotation.y = 0;           // Смотрит в -Z (на врагов)
+            playerShip = createShip(0x3a8ad0, 1.2, 'player');
+            playerShip.position.set(0, 0, 40);
+            playerShip.userData = { type: 'player', health: 100 };
             scene.add(playerShip);
-            console.log('✅ Игрок добавлен на позицию:', playerShip.position.toArray());
 
-            // === СОЮЗНИКИ ===
-            const allyPositions = [
-                { x: -30, z: 50 },
-                { x: 30, z: 50 }
-            ];
-            allyPositions.forEach((p, i) => {
-                const ally = createShip(0x3a8ad0, 1.0, false);
+            const allyPositions = [{ x: -30, z: 50 }, { x: 30, z: 50 }];
+            allyPositions.forEach(p => {
+                const ally = createShip(0x3a8ad0, 1.0, 'ally');
                 ally.position.set(p.x, 0, p.z);
-                ally.rotation.y = 0;
+                ally.userData = { type: 'ally', health: 100 };
                 scene.add(ally);
                 allies.push(ally);
-                console.log(`✅ Союзник ${i + 1} добавлен:`, ally.position.toArray());
             });
 
-            // === ВРАГИ ===
             const enemyPositions = [
                 { x: -40, z: -50 },
                 { x: 0, z: -60 },
                 { x: 40, z: -50 }
             ];
-            enemyPositions.forEach((p, i) => {
-                const enemy = createShip(0xd03a3a, 1.0, false);
+            enemyPositions.forEach(p => {
+                const enemy = createShip(0xd03a3a, 1.0, 'enemy');
                 enemy.position.set(p.x, 0, p.z);
-                enemy.rotation.y = Math.PI; // Смотрят на игрока (в +Z)
+                enemy.rotation.y = Math.PI;
+                enemy.userData = {
+                    type: 'enemy',
+                    health: HITS_TO_KILL,
+                    maxHealth: HITS_TO_KILL,
+                    cooldown: 1 + Math.random() * 1.5
+                };
                 scene.add(enemy);
                 enemies.push(enemy);
-                console.log(`✅ Враг ${i + 1} добавлен:`, enemy.position.toArray());
             });
-
-            console.log(`📊 Всего: игрок=${!!playerShip}, союзников=${allies.length}, врагов=${enemies.length}`);
         }
 
-        // ---------- WATER ----------
+        // ---------- OCEAN ----------
         function animateOcean(time) {
             if (!ocean || !ocean.geometry) return;
             const positions = ocean.geometry.attributes.position.array;
@@ -537,7 +595,62 @@
             if (!isLowPower) ocean.geometry.computeVertexNormals();
         }
 
-        // ---------- GAME LOOP ----------
+        // ---------- SHOOT ----------
+        function shootFromShip(ship, shooterType) {
+            if (!ship) return;
+            const bulletGeo = new THREE.SphereGeometry(0.8, 5, 5);
+            const isEnemy = shooterType === 'enemy';
+            const bulletMat = new THREE.MeshBasicMaterial({
+                color: isEnemy ? 0xff3300 : 0xffcc00
+            });
+            const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+
+            _v1.set(0, 2.5, 6).applyQuaternion(ship.quaternion);
+            bullet.position.copy(ship.position).add(_v1);
+
+            _v1.set(0, 0, 1).applyQuaternion(ship.quaternion);
+            bullet.userData.velocity = _v1.clone().multiplyScalar(isEnemy ? 60 : 80);
+            bullet.userData.life = 3;
+            bullet.userData.isEnemy = isEnemy;
+
+            scene.add(bullet);
+            if (isEnemy) enemyBullets.push(bullet);
+            else bullets.push(bullet);
+        }
+
+        // ---------- DESTROY SHIP ----------
+        function destroyShip(ship) {
+            const explosion = new THREE.Mesh(
+                new THREE.SphereGeometry(6, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.9 })
+            );
+            explosion.position.copy(ship.position);
+            scene.add(explosion);
+
+            let scale = 1;
+            const growInterval = setInterval(() => {
+                scale += 0.5;
+                explosion.scale.set(scale, scale, scale);
+                explosion.material.opacity -= 0.08;
+                if (explosion.material.opacity <= 0) {
+                    clearInterval(growInterval);
+                    scene.remove(explosion);
+                    explosion.geometry.dispose();
+                    explosion.material.dispose();
+                }
+            }, 30);
+
+            scene.remove(ship);
+            ship.traverse(obj => {
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+            });
+        }
+
+        // ---------- UPDATE ----------
         function updateGame(dt) {
             if (!gameActive || !playerShip) return;
             dt = Math.min(dt, 0.05);
@@ -561,12 +674,10 @@
                 playerShip.position.z += Math.cos(playerShip.rotation.y) * speed * moveForward;
             }
 
-            // Ограничения карты
             const L = 250;
             playerShip.position.x = Math.max(-L, Math.min(L, playerShip.position.x));
             playerShip.position.z = Math.max(-L, Math.min(L, playerShip.position.z));
 
-            // === КАМЕРА ===
             _v1.set(0, 28, -55).applyQuaternion(playerShip.quaternion);
             _v2.copy(playerShip.position).add(_v1);
             camera.position.lerp(_v2, 0.08);
@@ -575,8 +686,8 @@
             _v2.copy(playerShip.position).add(_v1);
             camera.lookAt(_v2);
 
-            // === ВРАГИ ===
-            for (let i = 0; i < enemies.length; i++) {
+            // Враги
+            for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
                 _v1.subVectors(playerShip.position, e.position);
                 const dist = _v1.length();
@@ -584,8 +695,18 @@
                     _v1.normalize();
                     e.position.x += _v1.x * 0.15;
                     e.position.z += _v1.z * 0.15;
-                    e.rotation.y = Math.atan2(_v1.x, _v1.z);
                 }
+                e.rotation.y = Math.atan2(
+                    playerShip.position.x - e.position.x,
+                    playerShip.position.z - e.position.z
+                );
+
+                e.userData.cooldown -= dt;
+                if (e.userData.cooldown <= 0 && dist < 120) {
+                    shootFromShip(e, 'enemy');
+                    e.userData.cooldown = 1.5 + Math.random() * 1.5;
+                }
+
                 if (dist < 14) {
                     playerHealth -= 0.4;
                     if (playerHealth < 0) playerHealth = 0;
@@ -596,7 +717,7 @@
                 }
             }
 
-            // === СОЮЗНИКИ ===
+            // Союзники
             for (let i = 0; i < allies.length; i++) {
                 const a = allies[i];
                 const side = i === 0 ? -30 : 30;
@@ -606,24 +727,38 @@
                 a.rotation.y = playerShip.rotation.y;
             }
 
-            // === ПУЛИ ===
+            // Пули игрока
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const b = bullets[i];
                 b.position.addScaledVector(b.userData.velocity, dt);
                 b.userData.life -= dt;
 
                 let hit = false;
-                for (let j = 0; j < enemies.length; j++) {
-                    if (b.position.distanceTo(enemies[j].position) < 9) {
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (b.position.distanceTo(enemy.position) < 9) {
+                        enemy.userData.health -= 1;
                         score += 10;
                         updateHUD();
-                        const explosion = new THREE.Mesh(
-                            new THREE.SphereGeometry(4, 6, 6),
-                            new THREE.MeshBasicMaterial({ color: 0xff6600 })
+
+                        const spark = new THREE.Mesh(
+                            new THREE.SphereGeometry(2, 6, 6),
+                            new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.9 })
                         );
-                        explosion.position.copy(enemies[j].position);
-                        scene.add(explosion);
-                        setTimeout(() => scene.remove(explosion), 250);
+                        spark.position.copy(b.position);
+                        scene.add(spark);
+                        setTimeout(() => {
+                            scene.remove(spark);
+                            spark.geometry.dispose();
+                            spark.material.dispose();
+                        }, 200);
+
+                        if (enemy.userData.health <= 0) {
+                            destroyShip(enemy);
+                            enemies.splice(j, 1);
+                            score += 50;
+                            updateHUD();
+                        }
                         hit = true;
                         break;
                     }
@@ -636,36 +771,97 @@
                 }
             }
 
-            // === СТРЕЛЬБА ===
+            // Пули врагов
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const b = enemyBullets[i];
+                b.position.addScaledVector(b.userData.velocity, dt);
+                b.userData.life -= dt;
+
+                let hit = false;
+                if (b.position.distanceTo(playerShip.position) < 10) {
+                    playerHealth -= 10;
+                    if (playerHealth < 0) playerHealth = 0;
+                    updateHUD();
+                    const spark = new THREE.Mesh(
+                        new THREE.SphereGeometry(2.5, 6, 6),
+                        new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.9 })
+                    );
+                    spark.position.copy(b.position);
+                    scene.add(spark);
+                    setTimeout(() => {
+                        scene.remove(spark);
+                        spark.geometry.dispose();
+                        spark.material.dispose();
+                    }, 200);
+                    hit = true;
+                }
+
+                if (hit || b.userData.life <= 0) {
+                    scene.remove(b);
+                    b.geometry.dispose();
+                    b.material.dispose();
+                    enemyBullets.splice(i, 1);
+                }
+            }
+
+            // Стрельба игрока
             fireCooldown -= dt;
             if ((keys.space || joystick.fire) && fireCooldown <= 0) {
-                shoot();
+                shootFromShip(playerShip, 'player');
                 keys.space = false;
                 joystick.fire = false;
                 fireCooldown = 0.3;
             }
 
-            if (playerHealth <= 0) {
+            // Победа
+            if (enemies.length === 0 && !victoryShown && gameActive) {
+                victoryShown = true;
                 gameActive = false;
-                setTimeout(() => { alert('Корабль потоплен!'); location.reload(); }, 200);
+                setTimeout(showVictory, 400);
+            }
+
+            // Поражение
+            if (playerHealth <= 0 && gameActive) {
+                gameActive = false;
+                setTimeout(() => {
+                    alert('Корабль потоплен!');
+                    location.reload();
+                }, 200);
             }
         }
 
-        function shoot() {
-            if (!playerShip) return;
-            const bulletGeo = new THREE.SphereGeometry(0.8, 5, 5);
-            const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
-            const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+        // ---------- VICTORY ----------
+        function showVictory() {
+            document.getElementById('victoryScore').textContent = score;
+            document.getElementById('victoryScreen').classList.add('show');
+            document.getElementById('mobileControls').classList.remove('active');
+            document.getElementById('ui-container').innerHTML = '';
+        }
 
-            _v1.set(0, 2.5, 6).applyQuaternion(playerShip.quaternion);
-            bullet.position.copy(playerShip.position).add(_v1);
+        function backToMapSelect() {
+            document.getElementById('victoryScreen').classList.remove('show');
+            document.getElementById('mapScreen').classList.remove('hidden');
+            document.getElementById('authScreen').classList.add('hidden');
 
-            _v1.set(0, 0, 1).applyQuaternion(playerShip.quaternion);
-            bullet.userData.velocity = _v1.clone().multiplyScalar(80);
-            bullet.userData.life = 2;
+            if (playerShip) { scene.remove(playerShip); playerShip = null; }
+            allies.forEach(s => scene.remove(s));
+            enemies.forEach(s => scene.remove(s));
+            bullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
+            enemyBullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
+            allies = []; enemies = []; bullets = []; enemyBullets = [];
 
-            scene.add(bullet);
-            bullets.push(bullet);
+            const toRemove = [];
+            scene.traverse(obj => { if (obj.userData && obj.userData.isMapObject) toRemove.push(obj); });
+            toRemove.forEach(o => scene.remove(o));
+
+            victoryShown = false;
+            gameActive = false;
+
+            // Сброс выбора карты
+            document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+            const btn = document.getElementById('startBattleBtn');
+            btn.disabled = true;
+            document.getElementById('mapStatus').textContent = 'Выберите карту';
         }
 
         // ---------- HUD ----------
@@ -691,20 +887,21 @@
 
         // ---------- START GAME ----------
         function startGame(mapId) {
-            console.log('🚀 Старт игры. Карта:', mapId);
+            if (!mapId) {
+                alert('Сначала выберите карту!');
+                return;
+            }
 
-            // Очищаем только игровые объекты, НЕ трогаем свет/камеру
+            // Очистка сцены
             if (playerShip) { scene.remove(playerShip); playerShip = null; }
             allies.forEach(s => scene.remove(s));
             enemies.forEach(s => scene.remove(s));
             bullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
-            allies = []; enemies = []; bullets = [];
+            enemyBullets.forEach(b => { scene.remove(b); b.geometry.dispose(); b.material.dispose(); });
+            allies = []; enemies = []; bullets = []; enemyBullets = [];
 
-            // Удаляем старые острова (объекты с userData.isMapObject)
             const toRemove = [];
-            scene.traverse(obj => {
-                if (obj.userData && obj.userData.isMapObject) toRemove.push(obj);
-            });
+            scene.traverse(obj => { if (obj.userData && obj.userData.isMapObject) toRemove.push(obj); });
             toRemove.forEach(o => scene.remove(o));
 
             addMapObjects(mapId);
@@ -713,29 +910,23 @@
             playerHealth = 100;
             score = 0;
             gameActive = true;
+            victoryShown = false;
 
             updateHUD();
 
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mapScreen').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.remove('show');
 
             if (isMobile) {
                 document.getElementById('mobileControls').classList.add('active');
             }
 
-            // Помечаем острова как map-объекты
-            scene.traverse(obj => {
-                if (obj.geometry && obj.geometry.type === 'CylinderGeometry' && !obj.userData.isMapObject) {
-                    obj.userData.isMapObject = true;
-                }
-            });
-
-            // Принудительный рендер кадра
             renderer.render(scene, camera);
             labelRenderer.render(scene, camera);
         }
 
-        // ---------- MOBILE CONTROLS ----------
+        // ---------- MOBILE ----------
         function setupMobileControls() {
             const zone = document.getElementById('joystickZone');
             const knob = document.getElementById('joystickKnob');
@@ -790,11 +981,47 @@
                 e.preventDefault();
                 joystick.fire = true;
             }, { passive: false });
-            // Также клик мышью для десктопной отладки
             fireBtn.addEventListener('click', () => { joystick.fire = true; });
         }
 
-        // ---------- INPUT ----------
+        // ---------- BUILD MAP CARDS (ВАЖНО) ----------
+        function buildMapCards() {
+            const mapGrid = document.getElementById('mapGrid');
+            mapGrid.innerHTML = ''; // очистим на всякий случай
+
+            const maps = [
+                { id: 'north', name: 'Север', desc: 'Ледяные воды' },
+                { id: 'south', name: 'Юг', desc: 'Тёплое море' },
+                { id: 'east', name: 'Восток', desc: 'Опасные рифы' },
+                { id: 'west', name: 'Запад', desc: 'Туманные берега' }
+            ];
+
+            maps.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'map-card';
+                card.dataset.mapId = m.id;
+                card.innerHTML = `<h3>${m.name}</h3><p>${m.desc}</p>`;
+
+                const selectHandler = (ev) => {
+                    if (ev) ev.preventDefault();
+                    console.log('🗺️ Выбрана карта:', m.id);
+                    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedMapId = m.id;
+                    currentMap = m.id;
+                    const btn = document.getElementById('startBattleBtn');
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    document.getElementById('mapStatus').textContent = 'Выбрано: ' + m.name;
+                };
+
+                card.addEventListener('click', selectHandler);
+                card.addEventListener('touchend', selectHandler, { passive: false });
+                mapGrid.appendChild(card);
+            });
+        }
+
+        // ---------- EVENT LISTENERS ----------
         function setupEventListeners() {
             window.addEventListener('keydown', e => {
                 switch (e.code) {
@@ -814,38 +1041,43 @@
                 }
             });
 
+            // === ВХОД ===
             document.getElementById('loginBtn').addEventListener('click', () => {
+                currentUsername = (document.getElementById('username').value.trim() || 'Адмирал').slice(0, 12);
+                console.log('👤 Вход:', currentUsername);
                 document.getElementById('authScreen').classList.add('hidden');
                 document.getElementById('mapScreen').classList.remove('hidden');
+                buildMapCards(); // строим карточки при входе
             });
+
+            // Если пользователь нажал Enter в поле пароля
+            document.getElementById('password').addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    document.getElementById('loginBtn').click();
+                }
+            });
+
             document.getElementById('registerBtn').addEventListener('click', () => {
-                alert('Регистрация успешна!');
+                alert('Регистрация успешна! Теперь войдите.');
             });
 
-            const mapGrid = document.getElementById('mapGrid');
-            const maps = [
-                { id: 'north', name: 'Север', desc: 'Ледяные воды' },
-                { id: 'south', name: 'Юг', desc: 'Тёплое море' },
-                { id: 'east', name: 'Восток', desc: 'Опасные рифы' },
-                { id: 'west', name: 'Запад', desc: 'Туманные берега' }
-            ];
-            maps.forEach(m => {
-                const card = document.createElement('div');
-                card.className = 'map-card';
-                card.innerHTML = `<h3>${m.name}</h3><p>${m.desc}</p>`;
-                const select = () => {
-                    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    document.getElementById('startBattleBtn').disabled = false;
-                    currentMap = m.id;
-                };
-                card.addEventListener('click', select);
-                card.addEventListener('touchend', e => { e.preventDefault(); select(); }, { passive: false });
-                mapGrid.appendChild(card);
+            // === СТАРТ БОЯ ===
+            document.getElementById('startBattleBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!selectedMapId) {
+                    alert('Выберите карту!');
+                    return;
+                }
+                startGame(selectedMapId);
             });
 
-            document.getElementById('startBattleBtn').addEventListener('click', () => startGame(currentMap));
+            // === НАЗАД К КАРТАМ ===
+            document.getElementById('backToMenuBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                backToMapSelect();
+            });
 
+            // Запрет скролла в игре
             document.addEventListener('touchmove', e => {
                 if (gameActive) e.preventDefault();
             }, { passive: false });
@@ -888,8 +1120,8 @@
             setupEventListeners();
             if (isMobile) setupMobileControls();
             animate();
-            console.log('✅ Готово. isMobile =', isMobile, '| isLowPower =', isLowPower);
+            console.log('✅ Готово');
         });
     </script>
 </body>
-</html>
+    </html>
